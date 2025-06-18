@@ -85,6 +85,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 * Revsets now support logical operators in string patterns.
 
+* The representation of conflicted commits in the Git backend has changed so
+  that in editors that highlight changed files, only files which changed
+  compared to the first side of the conflict will be highlighted. Previously,
+  all non-conflicted files would be shown as added even if they were unchanged.
+
 ### Fixed bugs
 
 * `jj metaedit --author-timestamp` twice with the same value no longer
