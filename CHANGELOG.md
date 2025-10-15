@@ -23,6 +23,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   bookmarks if the specified `pattern` matches `git`. The default is
   `remote=~exact:"git"` as before.
 
+* The config option `git.auto-local-bookmark` is
+  deprecated in favor of `git.auto-track-bookmarks`. See
+  <https://jj-vcs.github.io/jj/latest/config/#automatic-tracking-of-bookmarks>.
+
 ### Deprecations
 
  * `jj bisect run --command <cmd>` is deprecated in favor of
