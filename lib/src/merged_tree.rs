@@ -1035,6 +1035,29 @@ impl CopyHistoryTreeDiffEntry {
         });
         Self { target_path, diffs }
     }
+
+    fn creation(path: &RepoPath, val: &TreeValue) -> Self {
+        Self {
+            target_path: path.to_owned(),
+            diffs: Ok(Merge::resolved(CopyHistoryDiffTerm {
+                target_value: Some(val.clone()),
+                sources: vec![],
+            })),
+        }
+    }
+
+    fn deletion(path: &RepoPath, val: &TreeValue) -> Self {
+        Self {
+            target_path: path.to_owned(),
+            diffs: Ok(Merge::resolved(CopyHistoryDiffTerm {
+                target_value: None,
+                sources: vec![(
+                    CopyHistorySource::Normal,
+                    Merge::resolved(Some(val.clone())),
+                )],
+            })),
+        }
+    }
 }
 
 /// Adapts a `TreeDiffStream` to follow copies / renames.
@@ -1100,111 +1123,94 @@ impl Stream for CopyHistoryDiffStream<'_> {
                 continue;
             };
 
+            let path = next_tde.path.clone();
+            let before = before.clone();
+            let after = after.clone();
+
+            let simple = CopyHistoryTreeDiffEntry::simple(next_tde);
+
             // Don't try copy-tracing if we have conflicts on either side.
             //
             // TODO: maybe we could make this work if the CopyIds resolve, even if the files
             // themselves don't?
             let Some(before) = before.as_resolved() else {
-                self.pending
-                    .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::simple(next_tde))));
+                self.pending.push_back(Box::pin(ready(simple)));
                 continue;
             };
             let Some(after) = after.as_resolved() else {
-                self.pending
-                    .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::simple(next_tde))));
+                self.pending.push_back(Box::pin(ready(simple)));
                 continue;
             };
 
-            // Want to end up with before/after being None or Some(File)
-            let (before, after) = match (before, after) {
-                // If we have two Files with matching CopyIDs, we can skip copy-tracing
-                (
-                    Some(TreeValue::File { copy_id: copy1, .. }),
-                    Some(TreeValue::File { copy_id: copy2, .. }),
-                ) if copy1 == copy2 => {
+            match (before, after) {
+                // If we have files with different copy_ids, the first is deleted, and the second
+                // may be a copy or rename.
+                (Some(f1 @ TreeValue::File { .. }), Some(f2 @ TreeValue::File { .. }))
+                    if f1.copy_id() != f2.copy_id() =>
+                {
                     self.pending
-                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::simple(next_tde))));
-                    continue;
+                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::deletion(
+                            &path, f1,
+                        ))));
+                    let future = tree_diff_entry_from_copies(
+                        self.before_tree.clone(),
+                        self.after_tree.clone(),
+                        f2.clone(),
+                        path.clone(),
+                    );
+                    self.pending.push_back(Box::pin(future));
                 }
 
-                // If we only have Files, then we'll do copy-tracing below.
-                (Some(TreeValue::File { .. }), None)
-                | (Some(TreeValue::File { .. }), Some(TreeValue::File { .. }))
-                | (None, Some(TreeValue::File { .. })) => (before, after),
+                (Some(TreeValue::File { .. }), Some(TreeValue::File { .. })) => {
+                    self.pending.push_back(Box::pin(ready(simple)));
+                }
+
+                (Some(f @ TreeValue::File { .. }), None) => {
+                    self.pending
+                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::deletion(
+                            &path, f,
+                        ))));
+                }
+
+                (None, Some(f @ TreeValue::File { .. })) => {
+                    let future = tree_diff_entry_from_copies(
+                        self.before_tree.clone(),
+                        self.after_tree.clone(),
+                        f.clone(),
+                        path.clone(),
+                    );
+                    self.pending.push_back(Box::pin(future));
+                }
 
                 // If we have a File on one side and something else on the other, we need to
                 // split the TreeDiffEntry into two; one with the copy-matched File, and the other
                 // with the non-File as added or deleted.
-                (Some(TreeValue::File { .. }), Some(other)) => {
-                    // We're changing a path from a File to something else. First, queue up a
-                    // DiffEntry for the "something else" and then look for renames for the File.
+                (Some(f @ TreeValue::File { .. }), Some(other)) => {
                     self.pending
-                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::simple(
-                            TreeDiffEntry {
-                                path: next_tde.path.clone(),
-                                values: Ok(Diff {
-                                    before: Merge::absent(),
-                                    after: Merge::resolved(Some(other.clone())),
-                                }),
-                            },
+                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::deletion(
+                            &path, f,
                         ))));
-                    (before, &None)
-                }
-
-                (Some(other), Some(TreeValue::File { .. })) => {
                     self.pending
-                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::simple(
-                            TreeDiffEntry {
-                                path: next_tde.path.clone(),
-                                values: Ok(Diff {
-                                    before: Merge::resolved(Some(other.clone())),
-                                    after: Merge::absent(),
-                                }),
-                            },
+                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::creation(
+                            &path, other,
                         ))));
-                    (&None, after)
                 }
 
-                _ => {
+                (Some(other), Some(f @ TreeValue::File { .. })) => {
                     self.pending
-                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::simple(next_tde))));
-                    continue;
+                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::deletion(
+                            &path, other,
+                        ))));
+                    let future = tree_diff_entry_from_copies(
+                        self.before_tree.clone(),
+                        self.after_tree.clone(),
+                        f.clone(),
+                        path.clone(),
+                    );
+                    self.pending.push_back(Box::pin(future));
                 }
-            };
 
-            // At this point, at least one of before/after is a TreeValue::File; if both are
-            // Files, we know they have different copy IDs. Match against
-            // ancestors/descendants in both directions, possibly creating two
-            // `DiffStreamEntry`s
-
-            // If we have a "before" file that didn't match at the same path in the "after"
-            // tree, then this is either a deletion or a rename. Renames will be
-            // detected by the "after" side of whatever descendant file matches
-            // via copy-tracking to this "before" file. Later on we'll want to suppress such
-            // deletion diffs, but for now let's just emit them all.
-            //
-            // TODO: implement deletion suppression
-            if let Some(f) = before {
-                self.pending
-                    .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::simple(
-                        TreeDiffEntry {
-                            path: next_tde.path.clone(),
-                            values: Ok(Diff {
-                                before: Merge::resolved(Some(f.clone())),
-                                after: Merge::absent(),
-                            }),
-                        },
-                    ))));
-            }
-
-            if let Some(f) = after {
-                let fut = Box::pin(tree_diff_entry_from_copies(
-                    self.before_tree.clone(),
-                    self.after_tree.clone(),
-                    f.clone(),
-                    next_tde.path,
-                ));
-                self.pending.push_back(fut);
+                _ => self.pending.push_back(Box::pin(ready(simple))),
             }
         }
     }
