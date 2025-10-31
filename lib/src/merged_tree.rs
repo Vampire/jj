@@ -1165,11 +1165,8 @@ impl Stream for CopyHistoryDiffStream<'_> {
                     self.pending.push_back(Box::pin(ready(simple)));
                 }
 
-                (Some(f @ TreeValue::File { .. }), None) => {
-                    self.pending
-                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::deletion(
-                            &path, f,
-                        ))));
+                (Some(TreeValue::File { .. }), None) => {
+                    self.pending.push_back(Box::pin(ready(simple)));
                 }
 
                 (None, Some(f @ TreeValue::File { .. })) => {
@@ -1186,14 +1183,16 @@ impl Stream for CopyHistoryDiffStream<'_> {
                 // split the TreeDiffEntry into two; one with the copy-matched File, and the other
                 // with the non-File as added or deleted.
                 (Some(f @ TreeValue::File { .. }), Some(other)) => {
-                    self.pending
-                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::deletion(
-                            &path, f,
-                        ))));
-                    self.pending
-                        .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::creation(
-                            &path, other,
-                        ))));
+                    // TODO: test this case
+                    self.pending.push_back(Box::pin(ready(simple)));
+                    //self.pending
+                    //    .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::deletion(
+                    //        &path, f,
+                    //    ))));
+                    //self.pending
+                    //    .push_back(Box::pin(ready(CopyHistoryTreeDiffEntry::creation(
+                    //        &path, other,
+                    //    ))));
                 }
 
                 (Some(other), Some(f @ TreeValue::File { .. })) => {
