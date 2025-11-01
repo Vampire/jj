@@ -23,6 +23,8 @@ use indoc::indoc;
 use itertools::Itertools as _;
 use jj_lib::config::ConfigNamePathBuf;
 use jj_lib::file_util::normalize_path;
+use jj_lib::repo_path::RepoPath;
+use jj_lib::repo_path::RepoPathBuf;
 use jj_lib::settings::UserSettings;
 use jj_lib::workspace::DefaultWorkspaceLoaderFactory;
 use jj_lib::workspace::WorkspaceLoaderFactory as _;
@@ -742,33 +744,26 @@ pub fn branch_name_equals_any_revision(current: &std::ffi::OsStr) -> Vec<Complet
 
 fn path_completion_candidate_from(
     current_prefix: &str,
-    path: &str,
+    path: &RepoPath,
     mode: Option<&str>,
 ) -> Option<CompletionCandidate> {
     // The user-provided completion string might not prefix `path` unless cast in
     // normal form.
-    let normalized_prefix_path = normalize_path(Path::new(current_prefix));
-    let normalized_prefix = match normalized_prefix_path.to_str() {
-        None => current_prefix,
-        Some(".") => "", // `.` cannot be normalized further, but doesn't prefix `path`.
-        Some(normalized_prefix) => normalized_prefix,
-    };
+    let normalized_prefix =
+        RepoPathBuf::from_relative_path(normalize_path(Path::new(current_prefix))).ok()?;
 
-    let mut remainder = path.strip_prefix(normalized_prefix)?;
+    let mut remainder = path
+        .as_internal_file_string()
+        .strip_prefix(normalized_prefix.as_internal_file_string())?;
 
     // Trailing slash might have been normalized away in which case we need to strip
     // the leading slash in the remainder away, or else the slash would appear
     // twice.
     if current_prefix.ends_with(std::path::is_separator) {
-        remainder = remainder
-            .strip_prefix(std::path::is_separator)
-            .unwrap_or(remainder);
+        remainder = remainder.strip_prefix('/').unwrap_or(remainder);
     }
 
-    let (completion, help) = match remainder
-        .split_inclusive(std::path::is_separator)
-        .at_most_one()
-    {
+    let (completion, help) = match remainder.split_inclusive('/').at_most_one() {
         // Completed component is the final component in `path`, so we're completing the file to
         // which `mode` refers.
         Ok(file_completion) => (
@@ -787,8 +782,13 @@ fn path_completion_candidate_from(
         Err(mut components) => (components.next().unwrap(), None),
     };
 
-    // Completion candidate splices normalized completion onto the user-provided
-    // prefix.
+    // NOTE: `completion` is currently based off of the internal string which
+    // always uses forward slashes are separators, even on Windows. That way,
+    // completion will also work in POSIX-compatible environments on Windows
+    // (MinGW/MSYS2, commonly installed via git-bash.exe) but is still valid
+    // when dynamic completion is used in PowerShell.
+
+    // Completion candidate splices completion onto the user-provided prefix.
     Some(CompletionCandidate::new(format!("{current_prefix}{completion}")).help(help))
 }
 
@@ -810,6 +810,8 @@ fn all_files_from_rev(rev: String, current: &std::ffi::OsStr) -> Vec<CompletionC
             .arg("list")
             .arg("--revision")
             .arg(rev)
+            .arg("--template")
+            .arg(r#"path ++ "\n""#)
             .arg(current_prefix_to_fileset(current))
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::null())
@@ -821,7 +823,11 @@ fn all_files_from_rev(rev: String, current: &std::ffi::OsStr) -> Vec<CompletionC
             .lines()
             .take(1_000)
             .map_while(Result::ok)
-            .filter_map(|path| path_completion_candidate_from(current, &path, None))
+            .filter_map(|path| {
+                let path = RepoPath::from_internal_string(&path)
+                    .expect("template `path` should produce valid internal strings");
+                path_completion_candidate_from(current, path, None)
+            })
             .dedup() // directories may occur multiple times
             .collect())
     })
@@ -839,8 +845,8 @@ fn modified_files_from_rev_with_jj_cmd(
     // In case of a rename, one entry of `diff` results in two suggestions.
     let template = indoc! {r#"
         concat(
-          status ++ ' ' ++ path.display() ++ "\n",
-          if(status == 'renamed', 'renamed.source ' ++ source.path().display() ++ "\n"),
+          status ++ ' ' ++ path ++ "\n",
+          if(status == 'renamed', 'renamed.source ' ++ source.path() ++ "\n"),
         )
     "#};
     cmd.arg("diff")
@@ -858,6 +864,8 @@ fn modified_files_from_rev_with_jj_cmd(
         .lines()
         .filter_map(|line| line.split_once(' '))
         .filter_map(|(mode, path)| {
+            let path = RepoPath::from_internal_string(path)
+                .expect("template `path` should produce valid internal strings");
             if mode == "renamed.source" {
                 path_completion_candidate_from(current, path, Some("renamed"))
                     .inspect(|_| include_renames |= true)
@@ -905,8 +913,10 @@ fn conflicted_files_from_rev(rev: &str, current: &std::ffi::OsStr) -> Vec<Comple
                     .split_whitespace()
                     .next()
                     .expect("resolve --list should contain whitespace after path");
+                let path = RepoPathBuf::from_relative_path(path)
+                    .expect("resolve --list should produce repo-relative, normalized paths");
 
-                path_completion_candidate_from(current, path, None)
+                path_completion_candidate_from(current, &path, None)
             })
             .dedup() // directories may occur multiple times
             .collect())

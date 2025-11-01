@@ -105,6 +105,10 @@ edits the change twice in some cases.
   panic and allowing prefixes containing `.` or `..` to be completed correctly.
   [#6861](https://github.com/jj-vcs/jj/issues/6861)
 
+* Shell completion now always uses forward slashes to complete paths, even on
+  Windows. This renders completion results viable when using jj in Git Bash.
+  [#7024](https://github.com/jj-vcs/jj/issues/7024)
+
 ## [0.34.0] - 2025-10-01
 
 ### Release highlights

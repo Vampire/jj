@@ -1387,7 +1387,7 @@ fn test_files() {
     let work_dir = test_env.work_dir("repo");
 
     let output = work_dir.complete_fish(["file", "show", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_added
     f_added_2
     f_another_renamed_2
@@ -1401,7 +1401,7 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["file", "show", "./f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     ./f_added
     ./f_added_2
     ./f_another_renamed_2
@@ -1415,13 +1415,13 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["file", "show", "f_dir"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_dir/
     [EOF]
     ");
 
     let output = work_dir.complete_fish(["file", "show", "f_dir/"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_dir/dir_file_1
     f_dir/dir_file_2
     f_dir/dir_file_3
@@ -1430,7 +1430,7 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["file", "show", "f_dir/../"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_dir/../f_added
     f_dir/../f_added_2
     f_dir/../f_another_renamed_2
@@ -1444,7 +1444,7 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["file", "show", "f_dir/../f_dir/"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_dir/../f_dir/dir_file_1
     f_dir/../f_dir/dir_file_2
     f_dir/../f_dir/dir_file_3
@@ -1453,7 +1453,7 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["file", "annotate", "-r@-", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_added
     f_another_renamed_2
     f_copied
@@ -1466,7 +1466,7 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["diff", "-r", "@-", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_added	Added
     f_another_renamed_2	Renamed
     f_copied	Copied
@@ -1482,7 +1482,7 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["diff", "-r", "@-", "f_dir/../"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_dir/../f_added	Added
     f_dir/../f_another_renamed_2	Renamed
     f_dir/../f_copied	Copied
@@ -1503,16 +1503,18 @@ fn test_files() {
         "@-",
         &format!("f_dir{}", std::path::MAIN_SEPARATOR),
     ]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
-    f_dir/dir_file_1	Added
-    f_dir/dir_file_2	Added
-    f_dir/dir_file_3	Added
-    f_dir/f_renamed_3	Renamed
-    [EOF]
-    ");
+    insta::assert_snapshot!(
+        output.normalize_stdout_with(|s| s.replace(std::path::MAIN_SEPARATOR, "→")),
+        @r"
+        f_dir→dir_file_1	Added
+        f_dir→dir_file_2	Added
+        f_dir→dir_file_3	Added
+        f_dir→f_renamed_3	Renamed
+        [EOF]
+        ");
 
     let output = work_dir.complete_fish(["diff", "--from", "root()", "--to", "@-", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_added	Added
     f_another_renamed_2	Added
     f_copied	Added
@@ -1560,7 +1562,7 @@ fn test_files() {
         "--from=interdiff_from",
         "f_",
     ]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_interdiff_only_from	Added
     f_interdiff_same	Added
     f_interdiff_only_to	Added
@@ -1570,7 +1572,7 @@ fn test_files() {
 
     // squash has a different behavior with --from and --to flags
     let output = work_dir.complete_fish(["squash", "-f=first", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_deleted	Added
     f_modified	Added
     f_not_yet_copied	Added
@@ -1582,14 +1584,14 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["resolve", "-r=conflicted", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_dir/
     f_modified
     [EOF]
     ");
 
     let output = work_dir.complete_fish(["file", "list", "-r=first", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_deleted
     f_modified
     f_not_yet_copied
@@ -1601,7 +1603,7 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["log", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_added
     f_added_2
     f_another_renamed_2
@@ -1615,7 +1617,7 @@ fn test_files() {
     ");
 
     let output = work_dir.complete_fish(["log", "-r=first", "--revisions", "conflicted", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_added_2
     f_deleted
     f_dir/
@@ -1633,14 +1635,14 @@ fn test_files() {
     insta::assert_snapshot!(output, @"");
 
     let output = work_dir.complete_fish(["absorb", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_added_2	Added
     f_modified	Modified
     [EOF]
     ");
 
     let output = work_dir.complete_fish(["absorb", "-f=conflicted", "f_"]);
-    insta::assert_snapshot!(output.normalize_backslash(), @r"
+    insta::assert_snapshot!(output, @r"
     f_added_2	Added
     f_dir/
     f_modified	Modified
