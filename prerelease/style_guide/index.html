@@ -1433,6 +1433,81 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#documentation-comments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation comments
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Documentation comments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general" class="md-nav__link">
+    <span class="md-ellipsis">
+      General
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subcommand-comments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Subcommand comments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-argument-option-comments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command argument / option comments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fileset-revset-templating-language-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fileset / revset / templating language functions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fileset / revset / templating language functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#function-signatures" class="md-nav__link">
+    <span class="md-ellipsis">
+      Function signatures
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Descriptions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1913,6 +1988,81 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#documentation-comments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation comments
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Documentation comments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general" class="md-nav__link">
+    <span class="md-ellipsis">
+      General
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subcommand-comments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Subcommand comments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#command-argument-option-comments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command argument / option comments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fileset-revset-templating-language-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fileset / revset / templating language functions
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fileset / revset / templating language functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#function-signatures" class="md-nav__link">
+    <span class="md-ellipsis">
+      Function signatures
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Descriptions
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1941,8 +2091,8 @@
 <h2 id="panics">Panics<a class="headerlink" href="#panics" title="Permanent link">&para;</a></h2>
 <p>Panics are not allowed, especially in code that may run on a server. Calling
 <code>.unwrap()</code> is okay if it's guaranteed to be safe by previous checks or
-documented invariants. For example, if a function is documented as requiring
-a non-empty slice as input, it's fine to call <code>slice[0]</code> and panic.</p>
+documented invariants. For example, if a function is documented as requiring a
+non-empty slice as input, it's fine to call <code>slice[0]</code> and panic.</p>
 <h2 id="markdown">Markdown<a class="headerlink" href="#markdown" title="Permanent link">&para;</a></h2>
 <p>Try to wrap at 80 columns. We don't have a formatter yet.</p>
 <h2 id="prefer-lower-level-tests-to-end-to-end-tests">Prefer lower-level tests to end-to-end tests<a class="headerlink" href="#prefer-lower-level-tests-to-end-to-end-tests" title="Permanent link">&para;</a></h2>
@@ -1956,6 +2106,307 @@ tests for <code>jj log</code> don't need to test that all kinds of revsets are e
 correctly (we have tests in <code>jj-lib</code> for that), but they should check that the
 <code>-r</code> flag is respected.</p>
 <p>Use end-to-end tests for testing the CLI commands themselves.</p>
+<h2 id="documentation-comments">Documentation comments<a class="headerlink" href="#documentation-comments" title="Permanent link">&para;</a></h2>
+<h3 id="general">General<a class="headerlink" href="#general" title="Permanent link">&para;</a></h3>
+<p>In general, try to follow [<code>rust-lang/rfcs</code> 1574]. The important points are:</p>
+<ul>
+<li>
+<p>Use documentation comments (<code>///</code>) on types, functions, and fields.</p>
+</li>
+<li>
+<p>Use Markdown where appropriate, such as for symbols, code blocks, headings,
+  etc.</p>
+</li>
+<li>
+<p>The first line of a doc comment should be a single-line short sentence that
+  summarizes the element being described. There is no hard rule for "short", but
+  try to make it both clear and succinct.</p>
+<ul>
+<li>
+<p>Since doc comments are interpreted as Markdown, there must be a blank
+  comment line between this first line and the rest of the comment:</p>
+<p>```rust
+// CORRECT:</p>
+<p>/// Foos the given <code>bar</code> and <code>baz</code>.
+///
+/// More description about this very important function.
+fn foo(bar: &amp;Bar, baz: &amp;Baz) { ... }
+```</p>
+<p>```rust
+// INCORRECT: This entire comment will be interpreted as the "first line".</p>
+<p>/// Foos the given <code>bar</code> and <code>baz</code>.
+/// More description about this very important function.
+fn foo(bar: &amp;Bar, baz: &amp;Baz) { ... }
+```</p>
+</li>
+<li>
+<p>For functions, this summary line should be written in third-person singular
+  present indicative form ("Returns ..." instead of "Return ..."). You can
+  imagine an implicit "This function..." or the function's name before the
+  summary line.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>The rest of the comment after the first line should generally be written in
+  complete sentences. But use your own judgment too; for example a sentence that
+  says "Returns blah blah." would be fine.</p>
+</li>
+</ul>
+<h3 id="subcommand-comments">Subcommand comments<a class="headerlink" href="#subcommand-comments" title="Permanent link">&para;</a></h3>
+<p>Specifically for <code>jj</code> subcommands:</p>
+<ul>
+<li>
+<p>Doc comments for subcommands should describe its corresponding <code>*Args</code> struct.
+  For example, documentation for <code>jj new</code> goes on <code>struct NewArgs</code>.</p>
+</li>
+<li>
+<p>As above, write an appropriate short first line for the command, but do not
+  include a trailing period / full stop. See <code>jj -h</code> for examples (<code>--help</code> will
+  show the full doc comment for each command, while the short form <code>-h</code> will
+  only show the first line).</p>
+<ul>
+<li>
+<p>Use imperative mood, as if you are telling the command what to do (giving it
+  a command, if you will).</p>
+</li>
+<li>
+<p>If the subcommand is actually a "collection" of subcommands (such as
+  <code>jj config</code> or <code>jj bookmark</code>), prefer to use the format "Manage ...", such
+  as "Manage config options" or "Manage bookmarks". But use your own judgment;
+  if it sounds awkward, "Commands for ..." or whatever you come up with would
+  probably be fine.</p>
+</li>
+</ul>
+<p>```
+CORRECT:
+$ jj new -h
+Create a new, empty change and (by default) edit it in the working copy</p>
+<p>$ jj bookmark create -h
+Create a new bookmark
+```</p>
+<p><code>``
+INCORRECT:
+$ jj new -h
+Creates a new, empty change. The default behavior is to immediately edit this new change, but pass</code>--no-edit` to avoid this.</p>
+<p>$ jj bookmark create -h
+Creates new bookmarks with the given names and assigns them to the given target revision, which defaults to <code>@</code>.
+```</p>
+</li>
+<li>
+<p>The rest of the command documentation should be written in complete sentences.</p>
+</li>
+<li>
+<p>If the command requires complex explanation, such as <code>jj rebase</code>, prefer to
+  fully explain it in the command's doc comment rather than in some other online
+  documentation page so that all the relevant info can still be accessed via the
+  CLI.</p>
+<ul>
+<li>For example, <code>jj rebase --help</code>.</li>
+</ul>
+</li>
+<li>
+<p>Default aliases (i.e., those defined in [<code>misc.toml</code>]) are not automatically
+  shown by <code>clap</code>, since it doesn't know about them. Mention these at the end of
+  the first line for the command in question in the format
+  <code>[default alias: &lt;alias&gt;]</code>. For example, the first line of <code>jj describe</code> is:</p>
+<p><code>Update the change description or other metadata [default alias: desc]</code></p>
+</li>
+<li>
+<p>Very loose guidance, but if you are adding a new command, prefer single
+  "action" words (e.g., verbs) over compound words or portmanteaus. It can be a
+  good idea to add a new subcommand instead. Please ask for feedback on names if
+  you are struggling to come up with something or are unsure about a name.</p>
+</li>
+<li>
+<p>If you are unsure how your comment will look after being processed, run the
+  <code>test_generate_markdown_docs_in_docs_dir</code> test to generate
+  <code>cli-reference@.md.snap</code>.</p>
+</li>
+</ul>
+<h3 id="command-argument-option-comments">Command argument / option comments<a class="headerlink" href="#command-argument-option-comments" title="Permanent link">&para;</a></h3>
+<p>Specifically for <code>jj</code> command arguments / options:</p>
+<ul>
+<li>
+<p>As above, write an appropriate short first line for the arg, but do not
+  include a trailing period / full stop. See <code>jj &lt;command&gt; -h</code> for examples
+  (<code>--help</code> will show the full doc comment for each arg, while the short form
+  <code>-h</code> will only show the first line).</p>
+<ul>
+<li>
+<p>Since arguments can be things or actions or whatever, there is no hard rule
+  for the form of the first line. If it is a noun, such as <code>-R</code>/<code>--repository</code>
+  or <code>--config</code>, a good first line could be the answer to the question "What
+  is <code>&lt;arg&gt;</code>?" If it is a verb, such as <code>--quiet</code>, try to stick with
+  imperative mood (as if you're telling the command how to behave if this flag
+  is present). Use your own judgment for what might be clearest for users.</p>
+</li>
+<li>
+<p>If the argument can be repeated, append "(can be repeated)" to the end of
+  the first line.</p>
+</li>
+<li>
+<p>If the argument can be repeated, prefer to make the argument name singular
+  instead of plural, but speak about the "things" in the plural in the
+  documentation. This makes the experience of specifying the values on the
+  command line simpler and more consistent.</p>
+<ul>
+<li>Note that the name of the struct field can be different from the name of
+  the argument according to <code>clap</code>:
+  <code>rust
+  #[arg(long = "flag")]
+  my_values: MyType,</code>
+  This section is mostly discussing the user-facing argument / option names;
+  how you name variables is up to you.</li>
+</ul>
+</li>
+</ul>
+<p><code>CORRECT / PREFERRED:
+--ignore-working-copy  Don't snapshot the working copy, and don't update it
+--quiet                Silence non-primary command output
+--no-pager             Disable the pager
+--config &lt;NAME=VALUE&gt;  Additional configuration options (can be repeated)</code></p>
+<p><code>INCORRECT / LESS PREFERRED:
+--ignore-working-copy   No snapshotting (so working copy is ignored).
+--quiet                 Provide this option to skip non-primary command output.
+--no-pager              Disables the pager.
+--configs &lt;NAME=VALUE&gt;  Override some configuration options.</code></p>
+</li>
+<li>
+<p>Short options and visible aliases are automatically shown by <code>clap</code>, so no
+  need to mention them explicitly (for simple cases). However, it may be good to
+  mention conflicting arguments / options or how options interact with each
+  other if applicable.</p>
+</li>
+<li>
+<p>If an argument has a default value, mention what it is, probably in the full
+  description (i.e., not the first line).</p>
+<ul>
+<li>In cases where this default comes from a configurable setting, such as
+  <code>revsets.log</code> for <code>--revisions</code> in <code>jj log</code>, mention the setting. Prefer not
+  to also spell out the default value of the setting, since that introduces
+  toil and potential inconsistency if the default ever changes in the future.</li>
+</ul>
+</li>
+<li>
+<p>If you are unsure how your comment will look after being processed, run the
+  <code>test_generate_markdown_docs_in_docs_dir</code> test to generate
+  <code>cli-reference@.md.snap</code>.</p>
+</li>
+</ul>
+<h3 id="fileset-revset-templating-language-functions">Fileset / revset / templating language functions<a class="headerlink" href="#fileset-revset-templating-language-functions" title="Permanent link">&para;</a></h3>
+<p>(Note: In the templating language, this guidance also applies to all type
+methods.)</p>
+<h4 id="function-signatures">Function signatures<a class="headerlink" href="#function-signatures" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p>Function signatures are written similar to Rust:</p>
+<p><code>function_name(arg1: Type1, arg2: Type2) -&gt; ReturnType</code></p>
+<p>(Note that types are only applicable to the templating language and can be
+omitted from the fileset and revset language documentation.)</p>
+</li>
+<li>
+<p>For optional parameters, put square brackets around the <code>arg: Type</code> part;
+  importantly, do not put the brackets around any surrounding commas.</p>
+<p><code>CORRECT:
+parents(x, [depth])
+if(condition: Boolean, then: Template, [else: Template]) -&gt; Template</code></p>
+<p><code>INCORRECT:
+parents(x[, depth])
+if(condition: Boolean, then: Template[, else]) -&gt; Template</code></p>
+</li>
+<li>
+<p>For named parameters (rare), put the parameter name in the format <code>[name=]</code>
+  before the <code>arg: Type</code> part, with no spaces. Note that this should also be
+  included in the square brackets indicating that the parameter is optional.
+  <code>name</code> and <code>arg</code> may be the same, but they don't have to be.</p>
+<p>(Note that currently, named parameters must be optional, since they are
+intended as a way for users to skip previous optional parameters and provide a
+later one instead. However, this may change in the future, especially if named
+parameters make their way to the templating language.)</p>
+<p><code>CORRECT:
+remote_bookmarks([name_pattern], [[remote=]remote_pattern])</code></p>
+<p><code>INCORRECT:
+remote_bookmarks([name_pattern], [remote] = [remote_pattern])
+remote_bookmarks([name_pattern], [remote=remote_pattern])</code></p>
+</li>
+<li>
+<p>For variadic parameters, add an ellipsis (<code>...</code>) after the <code>arg: Type</code> part.</p>
+<p><code>CORRECT:
+coalesce(revsets...)
+concat(content: Template...) -&gt; Template</code></p>
+<p><code>INCORRECT:
+coalesce(...revsets)
+concat(*content: Template) -&gt; Template</code></p>
+</li>
+</ul>
+<h4 id="descriptions">Descriptions<a class="headerlink" href="#descriptions" title="Permanent link">&para;</a></h4>
+<ul>
+<li>
+<p>For the first sentence:</p>
+<ul>
+<li>
+<p>In the fileset language, "functions" act as "filters for files". Follow the
+  general Rust style of writing the first sentence in third-person singular
+  present indicative form.</p>
+</li>
+<li>
+<p>In the revset language, "functions" evaluate to "a set of revisions".
+  Writing a "Returns" prefix for every function is redundant and unnecessary;
+  instead, write the first sentence as if there is an implicit "The return
+  value is..." or "The return values are..." in front of the first sentence.</p>
+</li>
+<li>
+<p>In the templating language, "functions" will "accept inputs, do things, and
+  return an output". Follow the general Rust style of writing the first
+  sentence in third-person singular present indicative form.</p>
+</li>
+</ul>
+<p>```
+CORRECT:
+all(): Matches all files.</p>
+<p>root(): The virtual commit that is the oldest ancestor of all other commits.
+none(): No commits.
+none(): Nothing.</p>
+<p>json(value: Serialize) -&gt; String: Serializes <code>value</code> in JSON format.
+```</p>
+<p>```
+INCORRECT:
+all(): All files.</p>
+<p>root(): Returns the virtual commit that is the oldest ancestor of all other commits.
+none(): Returns nothing.</p>
+<p>json(value: Serialize) -&gt; String: Serialize <code>value</code> in JSON format.
+json(value: Serialize) -&gt; String: The <code>value</code> in JSON format.
+```</p>
+</li>
+<li>
+<p>All following sentences should be written as complete sentences.</p>
+</li>
+<li>
+<p>We tend to write the entire description as a single paragraph following the
+  function signature, but add line breaks for any examples of usages.</p>
+</li>
+<li>
+<p>Use <code>backticks</code> to reference arguments of the function instead of simply
+  saying "the content" or "the width".</p>
+</li>
+<li>
+<p>If a parameter's purpose is obvious, it does not need to be explicitly
+  mentioned in the description, but try to make sure it is clear what all
+  parameters do.</p>
+</li>
+<li>
+<p>Mention default values for optional parameters, or what happens if not given.</p>
+</li>
+<li>
+<p>Call out edge cases if applicable.</p>
+</li>
+<li>
+<p>For type methods in the templating language, try to document every method,
+  even if obvious. This will give you the chance to mention any edge cases,
+  default behaviors, or differences from other methods.</p>
+</li>
+</ul>
 
 
 
